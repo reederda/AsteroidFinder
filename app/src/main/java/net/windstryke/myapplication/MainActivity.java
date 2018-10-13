@@ -1,29 +1,107 @@
 package net.windstryke.myapplication;
 
-import android.support.v7.app.AppCompatActivity;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
+    EditText asteroidID;
+    TextView responseView;
+    ProgressBar progressBar;
+    static final String API_KEY = "uU43L4YtGAi07cIpBkUyAqOCqQC00v4L3zZRXm1Y";
+    static final String API_URL = "https://api.nasa.gov/neo/rest/v1/neo/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Example of a call to a native method
-        TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+        responseView = (TextView) findViewById(R.id.responseView);
+        asteroidID = (EditText) findViewById(R.id.asteroidID);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        Button queryButton = (Button) findViewById(R.id.queryButton);
+        queryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new RetrieveFeedTask().execute();
+            }
+        });
     }
 
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
+    class RetrieveFeedTask extends AsyncTask<Void, Void, String> {
+
+        private Exception exception;
+
+        protected void onPreExecute() {
+            progressBar.setVisibility(View.VISIBLE);
+            responseView.setText("Searching...");
+
+        }
+
+        protected String doInBackground(Void... urls) {
+            String asteroid = asteroidID.getText().toString();
+            // Do some validation here
+
+            try {
+                URL url = new URL(API_URL + asteroid + "?api_key=" + API_KEY);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                try {
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                    StringBuilder stringBuilder = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+                    bufferedReader.close();
+                    return stringBuilder.toString();
+                }
+                finally{
+                    urlConnection.disconnect();
+                }
+            }
+            catch(Exception e) {
+                Log.e("ERROR", e.getMessage(), e);
+                return null;
+            }
+        }
+
+        protected void onPostExecute(String response) {
+            if(response == null) {
+                response = "Invalid ID- The asteroid does not exist.";
+            }
+            progressBar.setVisibility(View.GONE);
+            Log.i("INFO", response);
+            responseView.setText(response);
+            // TODO: do something with the feed
+
+            try {
+                JSONObject object = (JSONObject) new JSONTokener(response).nextValue();
+                String requestID = object.getString("requestId");
+                int likelihood = object.getInt("likelihood");
+                JSONArray photos = object.getJSONArray("photos");
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
