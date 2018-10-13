@@ -20,6 +20,12 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import java.util.HashMap;
+import java.util.ArrayList;
+import android.widget.ListView;
+import android.widget.Toast;
+
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,6 +34,15 @@ public class MainActivity extends AppCompatActivity {
     ProgressBar progressBar;
     static final String API_KEY = "uU43L4YtGAi07cIpBkUyAqOCqQC00v4L3zZRXm1Y";
     static final String API_URL = "https://api.nasa.gov/neo/rest/v1/neo/";
+
+
+
+    private String TAG = MainActivity.class.getSimpleName();
+    private ListView lv;
+
+    ArrayList<HashMap<String, String>> contactList;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,23 +100,71 @@ public class MainActivity extends AppCompatActivity {
         }
 
         protected void onPostExecute(String response) {
-            if(response == null) {
-                response = "Invalid ID- The asteroid does not exist.";
-            }
-            progressBar.setVisibility(View.GONE);
-            Log.i("INFO", response);
-            responseView.setText(response);
-            // TODO: do something with the feed
+            if(response != null) {
+                //response = "Invalid ID- The asteroid does not exist.";
+                //}
+                progressBar.setVisibility(View.GONE);
+                Log.i("INFO", response);
+                responseView.setText(response); //This is where the result is printed out
 
-            try {
-                JSONObject object = (JSONObject) new JSONTokener(response).nextValue();
-                String requestID = object.getString("requestId");
-                int likelihood = object.getInt("likelihood");
-                JSONArray photos = object.getJSONArray("photos");
 
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+                try {
+                    JSONObject jsonObj = new JSONObject(response);
+
+                    // Getting JSON Array node
+                    JSONArray contacts = jsonObj.getJSONArray("contacts");
+
+                    // looping through All Contacts
+                    for (int i = 0; i < contacts.length(); i++) {
+                        JSONObject c = contacts.getJSONObject(i);
+                        String id = c.getString("id");
+                        String name = c.getString("name");
+
+
+                        // Phone node is JSON Object
+                        JSONObject phone = c.getJSONObject("phone");
+                        String absolute_magnitude_h = phone.getString("absolute_magnitude_h");
+
+
+                        // tmp hash map for single contact
+                        HashMap<String, String> contact = new HashMap<>();
+
+                        // adding each child node to HashMap key => value
+                        contact.put("id", id);
+                        contact.put("name", name);
+                        contact.put("absolute_magnitude_h", absolute_magnitude_h);
+
+                        // adding contact to contact list
+                        contactList.add(contact);
+                    }
+                } catch (final JSONException e) {
+                    Log.e(TAG, "Json parsing error: " + e.getMessage());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(),
+                                    "Json parsing error: " + e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
+
+                }
+
+        } else {
+            Log.e(TAG, "Couldn't get json from server.");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(),
+                            "Couldn't get json from server. Check LogCat for possible errors!",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+
+
+
         }
     }
 }
