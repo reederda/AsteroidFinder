@@ -22,7 +22,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:text="Find Asteroid" />
+        android:background="@android:color/holo_blue_dark"
+        android:text="Search" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -44,7 +45,8 @@
             <TextView
                 android:id="@+id/responseView"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.DialogWindowTitle" />
         </ScrollView>
     </RelativeLayout>
 </LinearLayout>

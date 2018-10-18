@@ -10,10 +10,8 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -25,8 +23,6 @@ import java.util.ArrayList;
 import android.widget.ListView;
 import android.widget.Toast;
 
-
-
 public class MainActivity extends AppCompatActivity {
 
     EditText asteroidID;
@@ -35,14 +31,10 @@ public class MainActivity extends AppCompatActivity {
     static final String API_KEY = "uU43L4YtGAi07cIpBkUyAqOCqQC00v4L3zZRXm1Y";
     static final String API_URL = "https://api.nasa.gov/neo/rest/v1/neo/";
 
-
-
     private String TAG = MainActivity.class.getSimpleName();
     private ListView lv;
 
     ArrayList<HashMap<String, String>> contactList;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
         protected void onPreExecute() {
             progressBar.setVisibility(View.VISIBLE);
             responseView.setText("Searching...");
-
         }
 
         protected String doInBackground(Void... urls) {
@@ -101,70 +92,47 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPostExecute(String response) {
             if(response != null) {
-                //response = "Invalid ID- The asteroid does not exist.";
-                //}
                 progressBar.setVisibility(View.GONE);
-                Log.i("INFO", response);
-                responseView.setText(response); //This is where the result is printed out
-
-
                 try {
+                    //make JSON object
                     JSONObject jsonObj = new JSONObject(response);
+                    //print information
+                    String asteroidName = jsonObj.get("designation").toString();
+                    String asteroidID = jsonObj.get("id").toString();
 
-                    // Getting JSON Array node
-                    JSONArray contacts = jsonObj.getJSONArray("contacts");
+                    //Get Estimated Diameter Main object
+                    JSONObject sizeEst = jsonObj.getJSONObject("estimated_diameter");
+                    //Get Estimated Diameter Sub-object
+                    JSONObject size = sizeEst.getJSONObject("meters");
+                    //Get Estimated Diameter string
+                    String asteroidMinSize = size.get("estimated_diameter_min").toString();
+                    String asteroidMaxSize = size.get("estimated_diameter_max").toString();
 
-                    // looping through All Contacts
-                    for (int i = 0; i < contacts.length(); i++) {
-                        JSONObject c = contacts.getJSONObject(i);
-                        String id = c.getString("id");
-                        String name = c.getString("name");
+                    String danger = jsonObj.get("is_potentially_hazardous_asteroid").toString();
+                    String information = jsonObj.get("nasa_jpl_url").toString();
+
+                    responseView.setText("Asteroid Name: " + asteroidName + "\n" +
+                                        "ID: " + asteroidID + "\n" +
+                                        "Est. Diameter: Between " + asteroidMinSize + " and " + asteroidMaxSize + " Meters\n" +
+                                        "Potentially Hazardous: " + danger + "\n\n" +
+                                        "Additional Information can be found at\n" + information);
 
 
-                        // Phone node is JSON Object
-                        JSONObject phone = c.getJSONObject("phone");
-                        String absolute_magnitude_h = phone.getString("absolute_magnitude_h");
-
-
-                        // tmp hash map for single contact
-                        HashMap<String, String> contact = new HashMap<>();
-
-                        // adding each child node to HashMap key => value
-                        contact.put("id", id);
-                        contact.put("name", name);
-                        contact.put("absolute_magnitude_h", absolute_magnitude_h);
-
-                        // adding contact to contact list
-                        contactList.add(contact);
-                    }
                 } catch (final JSONException e) {
-                    Log.e(TAG, "Json parsing error: " + e.getMessage());
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(),
-                                    "Json parsing error: " + e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
-
+                    Log.e(TAG, "Error");
                 }
 
-        } else {
-            Log.e(TAG, "Couldn't get json from server.");
+            } else {
+            Log.e(TAG, "The asteroid does not exist.");
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(getApplicationContext(),
-                            "Couldn't get json from server. Check LogCat for possible errors!",
+                            "No JSON to return.",
                             Toast.LENGTH_LONG).show();
-                }
-            });
-        }
-
-
-
-
+                    }
+                });
+            }
         }
     }
 }
