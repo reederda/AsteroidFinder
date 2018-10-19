@@ -63,10 +63,10 @@ public class MainActivity extends AppCompatActivity {
             responseView.setText("Searching...");
         }
 
+
+        //Call API to check for result with ID
         protected String doInBackground(Void... urls) {
             String asteroid = asteroidID.getText().toString();
-            // Do some validation here
-
             try {
                 URL url = new URL(API_URL + asteroid + "?api_key=" + API_KEY);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        //If API returns positive, pull results from API and parse into JSON Objects
         protected void onPostExecute(String response) {
             if(response != null) {
                 progressBar.setVisibility(View.GONE);
@@ -108,12 +109,27 @@ public class MainActivity extends AppCompatActivity {
                     String asteroidMinSize = size.get("estimated_diameter_min").toString();
                     String asteroidMaxSize = size.get("estimated_diameter_max").toString();
 
+                    //Get Orbital Data Main object
+                    JSONObject orbitMain = jsonObj.getJSONObject("orbital_data");
+                    //Get Orbital Data strings
+                    String firstObserve = orbitMain.get("first_observation_date").toString();
+                    String lastObserve = orbitMain.get("last_observation_date").toString();
+                    //get Orbital Data Sub-object
+                    JSONObject orbitSub = orbitMain.getJSONObject("orbit_class");
+                    String orbitClass = orbitSub.get("orbit_class_description").toString();
+
                     String danger = jsonObj.get("is_potentially_hazardous_asteroid").toString();
                     String information = jsonObj.get("nasa_jpl_url").toString();
 
+
+                    //Output results
                     responseView.setText("Asteroid Name: " + asteroidName + "\n" +
-                                        "ID: " + asteroidID + "\n" +
-                                        "Est. Diameter: Between " + asteroidMinSize + " and " + asteroidMaxSize + " Meters\n" +
+                                        "ID: " + asteroidID + "\n\n" +
+                                        "First Observed: " + firstObserve + "\n" +
+                                        "Latest Observation: " +  lastObserve + "\n\n" +
+                                        "Est. Diameter: Between " + asteroidMinSize + " and " +
+                                        asteroidMaxSize + " Meters\n\n" +
+                                        "Orbit Description: " + orbitClass + "\n\n" +
                                         "Potentially Hazardous: " + danger + "\n\n" +
                                         "Additional Information can be found at\n" + information);
 
